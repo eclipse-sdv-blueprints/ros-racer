@@ -1,0 +1,14 @@
+/**:
+  ros__parameters:
+    racecar1:
+      max_speed: 2.0
+      angle_gain: 1.7
+      safe_gap: 1.0
+    racecar2:
+      max_speed: 1.5
+      angle_gain: 1.0
+      safe_gap: 2.2
+    racecar3:
+      max_speed: 1.3
+      angle_gain: 1.7
+      safe_gap: 1.5

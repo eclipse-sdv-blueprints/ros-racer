@@ -1,0 +1,10 @@
+racecar:
+  agent1:
+    vehicle_name: 'racecar1'
+    color: 'black' # change between 'black', 'green', 'red', 'blue'
+  agent2:
+    vehicle_name: 'racecar2'
+    color: 'green'
+  agent3:
+    vehicle_name: 'racecar3'
+    color: 'red'

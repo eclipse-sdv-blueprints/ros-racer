@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>multiagent_plugin</name>
+  <version>0.0.1</version>
+  <description>RViz plugin for controlling Multiagent Sim</description>
+  <maintainer email="info@composiv.ai">composiv.ai</maintainer>
+  <license>TODO: License Declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rviz_common</depend>
+  <depend>std_msgs</depend>
+  <build_depend>qtbase5-dev</build_depend>
+
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
