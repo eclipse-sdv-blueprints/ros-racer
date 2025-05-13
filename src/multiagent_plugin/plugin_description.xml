@@ -1,0 +1,5 @@
+<library path="multiagent_plugin">
+  <class name="multiagent_plugin/MultiagentPanel" type="multiagent_plugin::MultiagentPanel" base_class_type="rviz_common::Panel">
+    <description>This is a plugin that contains controllers to manipulate the gym behavior.</description>
+  </class>
+</library>
