@@ -19,7 +19,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 #
 # Copyright (c) 2025 Composiv.ai
 #
@@ -33,6 +32,7 @@
 #   Composiv.ai - initial API and implementation
 #
 
+
 services:
   sim:
     build: ./
@@ -44,6 +44,10 @@ services:
       - x11
     stdin_open: true
     tty: true 
+    depends_on:
+      novnc:
+        restart: true
+        condition: service_healthy
   novnc:  
     image: theasp/novnc:latest
     environment:
@@ -54,5 +58,13 @@ services:
       - "8080:8080"
     networks:
       - x11
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
 networks:
   x11:
