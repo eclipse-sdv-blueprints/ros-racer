@@ -20,19 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#
-# Copyright (c) 2025 Composiv.ai
-#
-# This program and the accompanying materials are made available under the
-# terms of the Eclipse Public License 2.0 which is available at
-# http://www.eclipse.org/legal/epl-2.0.
-#
-# SPDX-License-Identifier: EPL-2.0
-#
-# Contributors:
-#   Composiv.ai - initial API and implementation
-#
-
 services:
   sim:
     build: ./
@@ -44,6 +31,10 @@ services:
       - x11
     stdin_open: true
     tty: true 
+    depends_on:
+      novnc:
+        restart: true
+        condition: service_healthy
   novnc:  
     image: theasp/novnc:latest
     environment:
@@ -54,5 +45,13 @@ services:
       - "8080:8080"
     networks:
       - x11
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
 networks:
   x11:
