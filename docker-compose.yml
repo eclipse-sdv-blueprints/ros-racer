@@ -19,6 +19,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+#
+# Copyright (c) 2025 Composiv.ai
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# Contributors:
+#   Composiv.ai - initial API and implementation
+#
+
 
 services:
   sim:
