@@ -53,4 +53,4 @@ volumes:
 networks:
   x11:
     external: true
-    name: ros-racer_x11
+    name: ${COMPOSE_PROJECT_NAME:-ros-racer}_x11

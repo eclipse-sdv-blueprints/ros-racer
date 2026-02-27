@@ -14,6 +14,7 @@ import sys
 import yaml
 
 NUM_AGENTS = int(os.environ.get('NUM_AGENTS', sys.argv[1] if len(sys.argv) > 1 else 3))
+COMPOSE_PROJECT_NAME = os.environ.get('COMPOSE_PROJECT_NAME', 'ros-racer')
 
 
 def generate_edge_service(index: int) -> dict:
@@ -93,7 +94,7 @@ for i in range(1, NUM_AGENTS + 1):
     service_name = 'edge' if i == 1 else f'edge{i}'
     services[service_name] = generate_edge_service(i)
 
-config = {'services': services, 'networks': {'x11': {'external': True, 'name': 'ros-racer_x11'}}}
+config = {'services': services, 'networks': {'x11': {'external': True, 'name': f'{COMPOSE_PROJECT_NAME}_x11'}}}
 
 # Header comment
 print(f"# Auto-generated for {NUM_AGENTS} racecars")
