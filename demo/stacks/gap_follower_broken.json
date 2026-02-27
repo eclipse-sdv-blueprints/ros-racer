@@ -9,7 +9,7 @@
     "url": "http://artifact-server:9090/gap_follower_broken.tar.gz",
     "properties": {
       "algorithm": "sha256",
-      "checksum": "21adb7648ee541470cd46747e03c3b38f39c166270a614c7b49fccc5f052280c",
+      "checksum": "bce663cf0cf1adaba9f736550633d771163b9af83c9a1c9ad9421a1e13605aed",
       "launch_file": "run.sh",
       "flatten": true
     }

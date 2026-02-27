@@ -24,6 +24,8 @@ def generate_edge_service(index: int) -> dict:
         'ROS_LOCALHOST_ONLY=0',
         f'VEHICLE_NAME={vehicle_name}',
         'RMW_IMPLEMENTATION=rmw_cyclonedds_cpp',
+        'MUTO_SYMPHONY_HOST=mosquitto',
+        'MUTO_SYMPHONY_API_URL=http://symphony-api:8082/v1alpha2/',
     ]
 
     service = {
@@ -91,7 +93,7 @@ for i in range(1, NUM_AGENTS + 1):
     service_name = 'edge' if i == 1 else f'edge{i}'
     services[service_name] = generate_edge_service(i)
 
-config = {'services': services, 'networks': {'x11': {}}}
+config = {'services': services, 'networks': {'x11': {'external': True, 'name': 'ros-racer_x11'}}}
 
 # Header comment
 print(f"# Auto-generated for {NUM_AGENTS} racecars")

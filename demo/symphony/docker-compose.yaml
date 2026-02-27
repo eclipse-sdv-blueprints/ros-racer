@@ -1,0 +1,56 @@
+
+services:
+  symphony-api:
+    image: ghcr.io/eclipse-symphony/symphony-api:0.48-proxy.40
+    container_name: symphony-api
+    ports:
+      - "8082:8082"
+    environment:
+      - USE_SERVICE_ACCOUNT_TOKENS=false
+      - SYMPHONY_API_URL=http://localhost:8082/v1alpha2/
+      - CONFIG=/symphony-api-no-k8s.json
+      - LOG_LEVEL=Error
+    volumes:
+      - ./providers:/extensions
+    networks:
+      - default
+      - x11
+    restart: unless-stopped
+  symphony-portal:
+    image: ghcr.io/eclipse-symphony/symphony-portal:0.48-proxy.40
+    container_name: symphony-portal
+    ports:
+      - "3000:3000"
+    environment:
+      - SYMPHONY_API=http://symphony-api:8082/v1alpha2/
+      - NEXTAUTH_SECRET=SymphonyKey
+      - NEXTAUTH_URL=http://localhost:3000
+    restart: unless-stopped
+    depends_on:
+      - symphony-api
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"     # MQTT (TCP)
+      # - "9001:9001"   # (optional) WebSocket listener, enable in config first
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+    networks:
+      - default
+      - x11
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t '$$SYS/#' -C 1 -W 3 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  mosquitto-data:
+  mosquitto-logs:
+networks:
+  x11:
+    external: true
+    name: ros-racer_x11

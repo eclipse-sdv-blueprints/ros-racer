@@ -23,7 +23,7 @@
     namespace: org.eclipse.muto.sandbox
     name: hack2025-01
 
-    symphony_enabled: False
+    symphony_enabled: True
     symphony_name: "hack2025-01"
     symphony_target_name: "muto-device-001"
     symphony_topic_prefix: "muto"

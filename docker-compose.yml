@@ -1,5 +1,5 @@
-# Auto-generated for 5 racecars
-# Regenerate: NUM_AGENTS=5 python3 scripts/generate-compose.py > docker-compose.yml
+# Auto-generated for 3 racecars
+# Regenerate: NUM_AGENTS=3 python3 scripts/generate-compose.py > docker-compose.yml
 services:
   artifact-server:
     image: nginx:alpine
@@ -35,7 +35,7 @@ services:
     - ROS_DOMAIN_ID=2
     - ROS_LOCALHOST_ONLY=0
     - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    - NUM_AGENTS=5
+    - NUM_AGENTS=3
     depends_on:
       novnc:
         condition: service_started
@@ -44,8 +44,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '3.5'
-          memory: 2798M
+          cpus: '2.9'
+          memory: 2498M
   edge:
     build:
       context: .
@@ -56,6 +56,8 @@ services:
     - ROS_LOCALHOST_ONLY=0
     - VEHICLE_NAME=racecar1
     - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    - MUTO_SYMPHONY_HOST=mosquitto
+    - MUTO_SYMPHONY_API_URL=http://symphony-api:8082/v1alpha2/
     volumes:
     - ./demo:/edge/demo:ro
     networks:
@@ -78,6 +80,8 @@ services:
     - ROS_LOCALHOST_ONLY=0
     - VEHICLE_NAME=racecar2
     - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    - MUTO_SYMPHONY_HOST=mosquitto
+    - MUTO_SYMPHONY_API_URL=http://symphony-api:8082/v1alpha2/
     volumes:
     - ./demo:/edge/demo:ro
     networks:
@@ -100,50 +104,8 @@ services:
     - ROS_LOCALHOST_ONLY=0
     - VEHICLE_NAME=racecar3
     - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    volumes:
-    - ./demo:/edge/demo:ro
-    networks:
-    - x11
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-  edge4:
-    build:
-      context: .
-      dockerfile: Dockerfile.edge
-    hostname: racecar4
-    environment:
-    - ROS_DOMAIN_ID=2
-    - ROS_LOCALHOST_ONLY=0
-    - VEHICLE_NAME=racecar4
-    - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    volumes:
-    - ./demo:/edge/demo:ro
-    networks:
-    - x11
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-  edge5:
-    build:
-      context: .
-      dockerfile: Dockerfile.edge
-    hostname: racecar5
-    environment:
-    - ROS_DOMAIN_ID=2
-    - ROS_LOCALHOST_ONLY=0
-    - VEHICLE_NAME=racecar5
-    - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    - MUTO_SYMPHONY_HOST=mosquitto
+    - MUTO_SYMPHONY_API_URL=http://symphony-api:8082/v1alpha2/
     volumes:
     - ./demo:/edge/demo:ro
     networks:
@@ -157,5 +119,7 @@ services:
           cpus: '0.25'
           memory: 256M
 networks:
-  x11: {}
+  x11:
+    external: true
+    name: ros-racer_x11
 

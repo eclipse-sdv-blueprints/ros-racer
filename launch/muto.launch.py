@@ -11,8 +11,22 @@ def generate_launch_description():
     launch_file_dir = os.path.dirname(os.path.abspath(__file__))
     workspace_dir = os.path.dirname(launch_file_dir)
     config_dir = os.path.join(workspace_dir, 'config')
-    
-    
+
+    # Parameters from environment variables (sandbox defaults)
+    env_params = {
+        "twin_url":                os.getenv("MUTO_TWIN_URL", "https://ditto:ditto@sandbox.composiv.ai"),
+        "twin_user":               os.getenv("MUTO_TWIN_USER", "ditto"),
+        "twin_password":           os.getenv("MUTO_TWIN_PASSWORD", "ditto"),
+        "host":                    os.getenv("MUTO_HOST", "sandbox.composiv.ai"),
+        "port":                    int(os.getenv("MUTO_PORT", "1883")),
+        "symphony_user":           os.getenv("MUTO_SYMPHONY_USER", "admin"),
+        "symphony_password":       os.getenv("MUTO_SYMPHONY_PASSWORD", ""),
+        "symphony_host":           os.getenv("MUTO_SYMPHONY_HOST", "localhost"),
+        "symphony_port":           int(os.getenv("MUTO_SYMPHONY_PORT", "1883")),
+        "symphony_api_url":        os.getenv("MUTO_SYMPHONY_API_URL", "http://localhost:8082/v1alpha2/"),
+        "symphony_broker_address": os.getenv("MUTO_SYMPHONY_BROKER_ADDRESS", "tcp://mosquitto:1883"),
+    }
+
     # Declare launch arguments
     declared_arguments = [
         DeclareLaunchArgument(
@@ -40,8 +54,7 @@ def generate_launch_description():
             description="Vehicle ID namespace",
         ),
         DeclareLaunchArgument(
-            "vehicle_name",  description="Vehicle ID",
-            default_value=f"ros_racer_{os.uname().nodename}"
+            "vehicle_name",  description="Vehicle ID"
         )
     ]
     
@@ -58,26 +71,28 @@ def generate_launch_description():
     node_agent = Node(
         namespace=muto_namespace,
         name="agent",
-        package="agent",
+        package="muto_agent",
         executable="muto_agent",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
     )
 
     node_mqtt_gateway = Node(
         namespace=muto_namespace,
         name="gateway",
-        package="agent",
+        package="muto_agent",
         executable="mqtt",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
@@ -85,13 +100,14 @@ def generate_launch_description():
     node_commands = Node(
         namespace=muto_namespace,
         name="commands_plugin",
-        package="agent",
+        package="muto_agent",
         executable="commands",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
@@ -100,13 +116,14 @@ def generate_launch_description():
     node_twin = Node(
         namespace=muto_namespace,
         name="core_twin",
-        package="core",
+        package="muto_core",
         executable="twin",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
@@ -115,13 +132,14 @@ def generate_launch_description():
     node_composer = Node(
         namespace=muto_namespace,
         name="muto_composer",
-        package="composer",
+        package="muto_composer",
         executable="muto_composer",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
@@ -129,13 +147,14 @@ def generate_launch_description():
     node_compose_plugin = Node(
         namespace=muto_namespace,
         name="compose_plugin",
-        package="composer",
+        package="muto_composer",
         executable="compose_plugin",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
@@ -143,13 +162,14 @@ def generate_launch_description():
     node_provision_plugin = Node(
         namespace=muto_namespace,
         name="provision_plugin",
-        package="composer",
+        package="muto_composer",
         executable="provision_plugin",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
@@ -157,20 +177,21 @@ def generate_launch_description():
     node_launch_plugin = Node(
         namespace=muto_namespace,
         name="launch_plugin",
-        package="composer",
+        package="muto_composer",
         executable="launch_plugin",
         output="screen",
         parameters=[
             muto_config_file,
             {"namespace": vehicle_namespace},
             {"name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )
-    
+
     symphony_provider = Node(
         namespace=muto_namespace,
-        package='agent',
+        package='muto_agent',
         executable='symphony_provider',
         name='muto_symphony_provider',
         output='screen',
@@ -180,6 +201,8 @@ def generate_launch_description():
             {"name": vehicle_name},
             {"namespace": vehicle_namespace},
             {"symphony_target_name": vehicle_name},
+            {"symphony_name": vehicle_name},
+            env_params,
         ],
         arguments=['--ros-args', '--log-level', log_level]
     )

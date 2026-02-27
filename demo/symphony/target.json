@@ -1,0 +1,26 @@
+{
+    "metadata": {
+        "name": "racecar-fleet"
+    },
+    "spec": {
+        "forceRedeploy": true,
+        "topologies": [
+            {
+                "bindings": [
+                    {
+                        "role": "muto-agent",
+                        "provider": "providers.target.mqtt",
+                        "config": {
+                            "name": "proxy",
+                            "brokerAddress": "tcp://mosquitto:1883",
+                            "clientID": "symphony",
+                            "requestTopic": "muto/coa-request",
+                            "responseTopic": "muto/coa-response",
+                            "timeoutSeconds": "30"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

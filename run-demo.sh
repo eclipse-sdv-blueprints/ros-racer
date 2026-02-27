@@ -33,14 +33,14 @@ DIM='\033[2m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STACKS_DIR="$SCRIPT_DIR/demo/stacks"
 DEPLOY_SCRIPT="$SCRIPT_DIR/demo/scripts/deploy-stack.py"
-SYMPHONY_DIR="$SCRIPT_DIR/symphony"
-SYMPHONY_INFRA_DIR="$SCRIPT_DIR/../symphony"
+SYMPHONY_DIR="$SCRIPT_DIR/demo/symphony"
+SYMPHONY_INFRA_DIR="$SCRIPT_DIR/demo/symphony"
 
 # Port configuration (using 10000 offset to avoid common port conflicts)
 PORT_NOVNC=18080
-PORT_SYMPHONY_API=18082
+PORT_SYMPHONY_API=8082
 PORT_SYMPHONY_PORTAL=13000
-PORT_MQTT=11883
+PORT_MQTT=1883
 
 # Fleet configuration (can be overridden via environment)
 NUM_AGENTS="${NUM_AGENTS:-3}"
@@ -560,6 +560,14 @@ phase_prerequisites() {
     # Generate artifact archives and update checksums
     generate_artifacts
 
+    # Create shared Docker network (used by both symphony and simulation compose files)
+    if ! $CONTAINER_RUNTIME network inspect ros-racer_x11 &>/dev/null; then
+        $CONTAINER_RUNTIME network create ros-racer_x11
+        print_success "Created shared Docker network: ros-racer_x11"
+    else
+        print_success "Shared Docker network ros-racer_x11 already exists"
+    fi
+
     wait_for_enter
 }
 
@@ -575,12 +583,12 @@ deployments across edge devices. It communicates with Muto agents via MQTT."
     echo -e "  ${CYAN}•${NC} mosquitto       - MQTT broker (port $PORT_MQTT)"
     echo ""
 
-    print_action "Running: $CONTAINER_RUNTIME compose up -d (in symphony directory)"
+    print_action "Running: $CONTAINER_RUNTIME compose up -d --build (in symphony directory)"
 
     wait_for_enter
 
     cd "$SYMPHONY_INFRA_DIR"
-    $CONTAINER_RUNTIME compose up -d
+    $CONTAINER_RUNTIME compose up -d --build
 
     print_success "Symphony containers started"
 
@@ -864,6 +872,46 @@ Symphony provides cloud-native orchestration with:
     wait_for_enter
 }
 
+phase_symphony_up() {
+    print_step "Starting Symphony Services"
+
+    print_narration "If you haven't started the Symphony infrastructure yet, we'll do it now. This includes the Symphony API, Portal, and MQTT broker."
+    echo "Services to be started:"
+    echo -e "  ${CYAN}•${NC} symphony-api    - REST API for orchestration (port $PORT_SYMPHONY_API)"
+    echo -e "  ${CYAN}•${NC} symphony-portal - Web dashboard (port $PORT_SYMPHONY_PORTAL)"
+    echo -e "  ${CYAN}•${NC} mosquitto       - MQTT broker (port $PORT_MQTT)"
+    echo ""
+    print_action "Running: $CONTAINER_RUNTIME compose up -d --build (in symphony directory)"
+
+    wait_for_enter
+
+    cd "$SYMPHONY_INFRA_DIR"
+    $CONTAINER_RUNTIME compose up -d --build
+
+    print_success "Symphony containers started"
+    echo ""
+
+    countdown 8 "Waiting for Symphony API to initialize"
+
+    # Verify Symphony is responding
+    print_info "Verifying Symphony API..."
+    local token=$(get_symphony_token)
+    if [ -n "$token" ] && [ "$token" != "null" ]; then
+        print_success "Symphony API is responding!"
+    else
+        print_warning "Symphony API may not be fully ready yet"
+    fi
+
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║${NC}  Symphony Portal: ${BOLD}http://localhost:${PORT_SYMPHONY_PORTAL}${NC}                    ${GREEN}║${NC}"
+    echo -e "${GREEN}║${NC}  Symphony API:    ${BOLD}http://localhost:${PORT_SYMPHONY_API}${NC}                    ${GREEN}║${NC}"
+    echo -e "${GREEN}║${NC}  MQTT Broker:     ${BOLD}localhost:${PORT_MQTT}${NC}                           ${GREEN}║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════╝${NC}"
+
+    wait_for_enter
+}
+
 phase_symphony_setup() {
     print_step "Register Solutions and Targets in Symphony"
 
@@ -888,7 +936,7 @@ phase_symphony_setup() {
     echo ""
 
     print_action "Creating target: racecar-fleet"
-    create_symphony_target "$SYMPHONY_DIR/target-racecar-fleet.json"
+    create_symphony_target "$SYMPHONY_DIR/target.json"
 
     echo ""
     print_success "Symphony resources registered!"
@@ -911,7 +959,7 @@ Symphony flow:
   4. Muto agents receive and deploy"
 
     echo "Instance details:"
-    echo -e "  ${CYAN}Solution:${NC} gap-follower-conservative-v-1"
+    echo -e "  ${CYAN}Solution:${NC} gap_follower_conservative:1"
     echo -e "  ${CYAN}Target:${NC}   racecar-fleet"
     echo -e "  ${CYAN}Method:${NC}   Symphony REST API -> MQTT -> Muto"
     echo ""
@@ -920,7 +968,7 @@ Symphony flow:
 
     wait_for_enter
 
-    create_symphony_instance "gap-follower-conservative-v-1" "racecar-fleet"
+    create_symphony_instance "gap_follower_conservative" "racecar-fleet"
 
     countdown 5 "Waiting for Symphony-orchestrated deployment"
 
@@ -939,7 +987,7 @@ phase_symphony_deploy_balanced() {
 with a different Solution. Symphony handles the transition."
 
     echo "Instance details:"
-    echo -e "  ${CYAN}Solution:${NC} gap-follower-balanced-v-1"
+    echo -e "  ${CYAN}Solution:${NC} gap_follower_balanced:1"
     echo -e "  ${CYAN}Target:${NC}   racecar-fleet"
     echo ""
 
@@ -947,7 +995,7 @@ with a different Solution. Symphony handles the transition."
 
     wait_for_enter
 
-    create_symphony_instance "gap-follower-balanced-v-1" "racecar-fleet"
+    create_symphony_instance "gap_follower_balanced" "racecar-fleet"
 
     countdown 3 "Transitioning via Symphony"
 
@@ -1085,7 +1133,7 @@ main() {
     phase_prerequisites
 
     # PART 1: Infrastructure
-    # phase_start_symphony
+    phase_symphony_up
     phase_start_simulation
 
     # PART 2: Direct Deployment (simplified to 2 variants + rollback demo)
@@ -1095,13 +1143,13 @@ main() {
     phase_deploy_broken
 
     # PART 3: Symphony Orchestration
-    # phase_symphony_header
-    # phase_symphony_setup
-    # phase_symphony_deploy_conservative
-    # phase_symphony_deploy_balanced
+    phase_symphony_header
+    phase_symphony_setup
+    phase_symphony_deploy_conservative
+    phase_symphony_deploy_balanced
 
     # PART 4: Fleet Heterogeneity
-    phase_fleet_heterogeneity
+    # phase_fleet_heterogeneity
 
     # Summary and Cleanup
     phase_summary
