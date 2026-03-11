@@ -42,6 +42,9 @@ PORT_SYMPHONY_API=8082
 PORT_SYMPHONY_PORTAL=13000
 PORT_MQTT=1883
 
+# Compose project name (ensures consistent container naming regardless of folder name)
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ros-racer}"
+
 # Fleet configuration (can be overridden via environment)
 NUM_AGENTS="${NUM_AGENTS:-3}"
 DEPLOY_STAGGER="${DEPLOY_STAGGER:-0.5}"
@@ -199,6 +202,18 @@ check_command() {
     fi
 }
 
+# Get the container name for an edge service index
+# Docker Compose names containers as: {project}-{service}-{replica}
+# Service names are: edge (index 1), edge2 (index 2), edge3 (index 3), ...
+get_edge_container() {
+    local index=$1
+    if [ "$index" -eq 1 ]; then
+        echo "${COMPOSE_PROJECT_NAME}-edge-1"
+    else
+        echo "${COMPOSE_PROJECT_NAME}-edge${index}-1"
+    fi
+}
+
 # Generate artifact tar.gz files and update checksums
 generate_artifacts() {
     print_info "Generating artifact archives..."
@@ -235,7 +250,7 @@ generate_artifacts() {
 
 # Show Muto logs from inside a container
 show_muto_logs() {
-    local container="${1:-ros-racer-edge-1}"
+    local container="${1:-$(get_edge_container 1)}"
     local lines="${2:-20}"
     local title="${3:-Muto Logs}"
 
@@ -260,7 +275,7 @@ show_muto_logs() {
 
 # Show Muto state from inside a container
 show_muto_state() {
-    local container="${1:-ros-racer-edge-1}"
+    local container="${1:-$(get_edge_container 1)}"
     local title="${2:-Muto State}"
 
     echo ""
@@ -306,13 +321,7 @@ show_all_muto_states() {
     echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════════════${NC}"
 
     for i in $(seq 1 "$NUM_AGENTS"); do
-        local container
-        if [ "$i" -eq 1 ]; then
-            container="ros-racer-edge-1"
-        else
-            container="ros-racer-edge${i}-1"
-        fi
-        show_muto_state "$container" "racecar${i}"
+        show_muto_state "$(get_edge_container "$i")" "racecar${i}"
     done
 }
 
@@ -321,7 +330,7 @@ show_all_muto_states() {
 deploy_stack() {
     local stack_json="$1"
     local vehicle="${2:-}"  # Optional: target specific vehicle
-    local container="ros-racer-edge-1"
+    local container="$(get_edge_container 1)"
 
     # Get just the filename from the path
     local stack_filename=$(basename "$stack_json")
@@ -561,11 +570,12 @@ phase_prerequisites() {
     generate_artifacts
 
     # Create shared Docker network (used by both symphony and simulation compose files)
-    if ! $CONTAINER_RUNTIME network inspect ros-racer_x11 &>/dev/null; then
-        $CONTAINER_RUNTIME network create ros-racer_x11
-        print_success "Created shared Docker network: ros-racer_x11"
+    local network_name="${COMPOSE_PROJECT_NAME}_x11"
+    if ! $CONTAINER_RUNTIME network inspect "$network_name" &>/dev/null; then
+        $CONTAINER_RUNTIME network create "$network_name"
+        print_success "Created shared Docker network: $network_name"
     else
-        print_success "Shared Docker network ros-racer_x11 already exists"
+        print_success "Shared Docker network $network_name already exists"
     fi
 
     wait_for_enter
@@ -717,8 +727,8 @@ This algorithm prioritizes safety with moderate speeds and wide safety margins."
     echo -e "${DIM}Watch the simulation - the cars should be moving slowly and cautiously.${NC}"
 
     # Show Muto logs and state after first deployment
-    show_muto_logs "ros-racer-edge-1" 45 "racecar1 Muto Logs"
-    show_muto_state "ros-racer-edge-1" "racecar1 State"
+    show_muto_logs "$(get_edge_container 1)" 45 "racecar1 Muto Logs"
+    show_muto_state "$(get_edge_container 1)" "racecar1 State"
 
     wait_with_message "Observe the cars moving slowly."
 }
@@ -757,8 +767,8 @@ an Over-The-Air update with improved performance."
     echo -e "${DIM}Watch the transition - the cars should immediately drive faster.${NC}"
 
     # Show logs and state
-    show_muto_logs "ros-racer-edge-1" 45 "racecar1 Muto Logs"
-    show_muto_state "ros-racer-edge-1" "racecar1 State"
+    show_muto_logs "$(get_edge_container 1)" 45 "racecar1 Muto Logs"
+    show_muto_state "$(get_edge_container 1)" "racecar1 State"
 
     wait_with_message "Observe the speed increase."
 }
@@ -793,7 +803,7 @@ This pushes the cars to their limits with high speeds and tight safety margins."
     echo -e "${DIM}Watch the cars - they should be driving much faster now!${NC}"
 
     # Show logs
-    show_muto_logs "ros-racer-edge-1" 45 "racecar1 Muto Logs"
+    show_muto_logs "$(get_edge_container 1)" 45 "racecar1 Muto Logs"
 
     wait_with_message "Observe the aggressive driving behavior."
 }
@@ -815,7 +825,7 @@ build makes it to production."
 
     # Show state BEFORE the broken deployment
     print_info "Current state BEFORE deploying broken version:"
-    show_muto_state "ros-racer-edge-1" "racecar1 State (Before)"
+    show_muto_state "$(get_edge_container 1)" "racecar1 State (Before)"
 
     print_warning "The cars will STOP briefly when the broken algorithm crashes!"
     print_info "Then watch for AUTOMATIC ROLLBACK to the previous working version."
@@ -834,7 +844,7 @@ build makes it to production."
     echo ""
     # Show logs to see the failure and rollback
     print_info "Logs showing the failure and rollback:"
-    show_muto_logs "ros-racer-edge-1" 45 "racecar1 Muto Logs (Failure & Rollback)"
+    show_muto_logs "$(get_edge_container 1)" 45 "racecar1 Muto Logs (Failure & Rollback)"
 
     echo ""
     echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════╗${NC}"
@@ -848,7 +858,7 @@ build makes it to production."
     echo ""
 
     # Show state AFTER rollback
-    show_muto_state "ros-racer-edge-1" "racecar1 State (After Rollback)"
+    show_muto_state "$(get_edge_container 1)" "racecar1 State (After Rollback)"
 
     echo -e "${DIM}The cars should be moving again with the previous algorithm.${NC}"
 
